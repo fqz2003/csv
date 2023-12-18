@@ -1,0 +1,94 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <unordered_set>
+
+struct StudentRecord {
+    std::string id;
+    std::string name;
+    std::string classInfo;
+
+    // 22001010206 冯荃泽 
+    std::string combinedKey() const {
+        return id + "|" + name + "|" + classInfo;
+    }
+};
+
+// 解析单行 CSV 数据
+StudentRecord parseCSV(const std::string& line) {
+    StudentRecord record;
+    std::istringstream lineStream(line);
+    std::getline(lineStream, record.classInfo, ',');
+    std::getline(lineStream, record.id, ',');
+    std::getline(lineStream, record.name);
+
+    return record;
+}
+
+// 比较两个记录并累积错误信息
+std::string compareRecords(const StudentRecord& record1, const StudentRecord& record2) {
+    std::string errorMessages;
+    bool isFirstError = true;
+
+    if (record1.id != record2.id) {
+        errorMessages += (isFirstError ? std::string("") : std::string(", "))+ "学号错误（错误：" + record1.id + "，正确：" + record2.id + "）";
+        isFirstError = false;
+    }
+    if (record1.name != record2.name) {
+        errorMessages += (isFirstError ? std::string("") : std::string(", ")) + "姓名错误（错误：" + record1.name + "，正确：" + record2.name + "）";
+        isFirstError = false;
+    }
+    if (record1.classInfo != record2.classInfo) {
+        errorMessages += (isFirstError ? std::string("") : std::string(", ")) + "班级错误（错误：" + record1.classInfo + "，正确：" + record2.classInfo + "）";
+    }
+
+    return errorMessages;
+}
+//冯荃泽 22001010206 
+// 查找两个文件之间的差异
+void findDifferences(const std::vector<std::string>& file1Lines, const std::vector<std::string>& file2Lines) {
+    for (size_t i = 0; i < file1Lines.size() && i < file2Lines.size(); ++i) {
+        StudentRecord record1 = parseCSV(file1Lines[i]);
+        StudentRecord record2 = parseCSV(file2Lines[i]);
+
+        std::string errorMessages = compareRecords(record1, record2);
+        if (!errorMessages.empty()) {
+            std::cout << "第 " << i + 1 << " 行：\n" << errorMessages << "\n";
+        }
+    }
+}
+
+std::vector<std::string> readCSVFile(const std::string& filePath) {
+    std::vector<std::string> lines;
+    std::ifstream file(filePath);
+    std::string line;
+
+    if (!file.is_open()) {
+        std::cerr << "无法打开文件：" << filePath << std::endl;
+        return lines;
+    }
+
+    int lineCount = 0;
+    while (std::getline(file, line)) {
+        if (++lineCount > 2) {  // 跳过前两行
+            lines.push_back(line);
+        }
+    }
+
+    file.close();
+    return lines;
+}
+//22001010206 冯荃泽 
+int main() {
+    std::string filePath1 = "C:\\Users\\86156\\Desktop\\original_data.csv";
+    std::string filePath2 = "C:\\Users\\86156\\Desktop\\data_for_check.csv";
+
+    std::vector<std::string> file1Lines = readCSVFile(filePath1);
+    std::vector<std::string> file2Lines = readCSVFile(filePath2);
+
+    findDifferences(file1Lines, file2Lines);
+
+    return 0;
+}
